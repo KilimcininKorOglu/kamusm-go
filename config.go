@@ -33,8 +33,8 @@ func configPath() (string, error) {
 	return filepath.Join(home, configFileName), nil
 }
 
-// machineKey derives a 32-byte AES key from hostname + username + salt phrase.
-func machineKey() ([]byte, error) {
+// machineKey derives a 32-byte AES key from hostname + username + per-file random salt.
+func machineKey(salt []byte) ([]byte, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, fmt.Errorf("hostname alınamadı: %w", err)
@@ -46,9 +46,7 @@ func machineKey() ([]byte, error) {
 	}
 
 	source := hostname + u.Username + configSaltPhrase
-	// Use PBKDF2 with the source as password and a fixed salt
-	fixedSalt := []byte("kamusm-go-fixed-salt-v1")
-	return deriveKey(source, fixedSalt, configKDIter), nil
+	return deriveKey(source, salt, configKDIter), nil
 }
 
 // saveConfig encrypts and saves the configuration to ~/.kamusm-go.conf.
@@ -59,11 +57,6 @@ func saveConfig(cfg configData) error {
 		return fmt.Errorf("JSON kodlama hatası: %w", err)
 	}
 
-	key, err := machineKey()
-	if err != nil {
-		return err
-	}
-
 	salt := make([]byte, 16)
 	if _, err := rand.Read(salt); err != nil {
 		return fmt.Errorf("rastgele salt üretilemedi: %w", err)
@@ -72,6 +65,11 @@ func saveConfig(cfg configData) error {
 	iv := make([]byte, 16)
 	if _, err := rand.Read(iv); err != nil {
 		return fmt.Errorf("rastgele IV üretilemedi: %w", err)
+	}
+
+	key, err := machineKey(salt)
+	if err != nil {
+		return err
 	}
 
 	ciphertext, err := encryptAesCbc(key, iv, jsonData)
@@ -113,10 +111,11 @@ func loadConfig() (*configData, error) {
 		return nil, fmt.Errorf("yapılandırma dosyası bozuk")
 	}
 
+	salt := data[0:16]
 	iv := data[16:32]
 	ciphertext := data[32:]
 
-	key, err := machineKey()
+	key, err := machineKey(salt)
 	if err != nil {
 		return nil, err
 	}
