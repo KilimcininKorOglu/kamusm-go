@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.0] - 2026-04-07
+
+### Changed
+- Document security limitations in README (config encryption, identity protocol, password visibility)
+
+### Fixed
+- Use per-file random salt in config key derivation instead of ignoring it
+- Add 30-second HTTP client timeout to prevent indefinite hangs
+
 ## [1.0.0] - 2026-04-06
 
 ### Added
