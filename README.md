@@ -256,6 +256,12 @@ Sunucu hata durumlarında bile HTTP 200 döner. İstemci yanıt gövdesinde PKCS
 | `User X is not known`                    | Geçersiz müşteri numarası              |
 | Bağlantı hatası                          | Ağ erişimi veya güvenlik duvarı sorunu |
 
+## Güvenlik Notları
+
+- **Parola koruması**: `--parola` CLI argümanı `ps` çıktısında görünür. Bunu önlemek için `ayar-kaydet` ile bilgileri bir kez kaydedin, sonraki kullanımlarda parametre gerekmez.
+- **Config şifreleme**: `~/.kamusm-go.conf` dosyası AES-256-CBC ile şifrelenir. Anahtar makine kimliğinden (hostname + kullanıcı adı) türetilir. Dosya 0600 izinleriyle korunur ancak makine kimliğini bilen biri dosyayı çözebilir.
+- **Identity protokolü**: `identity` başlığında salt ve IV aynı değerdir. Bu, Kamu SM protokolünün bir parçasıdır ve değiştirilemez. Varsayılan PBKDF2 iterasyon sayısı 100'dür (protokol gereği).
+
 ## Gereksinimler
 
 - Go 1.22 veya üzeri
