@@ -1,0 +1,4 @@
+reference-project/
+
+# Go binaries
+bin/
