@@ -6,12 +6,16 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 const (
 	userAgent       = "KilimcininKorOglu/kamusm-go/" + version
 	maxResponseSize = 1 << 16 // 64KB
+	httpTimeout     = 30 * time.Second
 )
+
+var httpClient = &http.Client{Timeout: httpTimeout}
 
 // setCommonHeaders sets the common HTTP headers for all KamuSM requests.
 func setCommonHeaders(req *http.Request, identity string) {
@@ -33,8 +37,7 @@ func sendTimestampRequest(host, identity string, der []byte) (int, []byte, error
 
 	setCommonHeaders(req, identity)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return 0, nil, fmt.Errorf("istek gönderilemedi: %w", err)
 	}
@@ -60,8 +63,7 @@ func sendCreditRequest(host, identity string, customerID uint32, timestamp uint6
 	req.Header.Set("credit_req_time", strconv.FormatUint(timestamp, 10))
 	req.ContentLength = 0
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return 0, "", nil, fmt.Errorf("bakiye kontrolü isteği gönderilemedi: %w", err)
 	}
