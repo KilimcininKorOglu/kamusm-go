@@ -77,6 +77,9 @@ func runIdentity(args []string) {
 	if *parola == "" {
 		fatal("--parola parametresi gereklidir")
 	}
+	if *iterasyon < 1 {
+		fatal("--iterasyon değeri en az 1 olmalıdır")
+	}
 
 	var digest []byte
 
@@ -129,6 +132,9 @@ func runSend(args []string) {
 	}
 	if *parola == "" {
 		fatal("--parola parametresi gereklidir")
+	}
+	if *iterasyon < 1 {
+		fatal("--iterasyon değeri en az 1 olmalıdır")
 	}
 
 	var digest []byte
@@ -279,6 +285,9 @@ func runCredits(args []string) {
 	if *parola == "" {
 		fatal("--parola parametresi gereklidir")
 	}
+	if *iterasyon < 1 {
+		fatal("--iterasyon değeri en az 1 olmalıdır")
+	}
 
 	ts := *zaman
 	if ts == 0 {
@@ -399,6 +408,9 @@ func runSaveConfig(args []string) {
 	}
 	if *parola == "" {
 		fatal("--parola parametresi gereklidir")
+	}
+	if *iterasyon < 1 {
+		fatal("--iterasyon değeri en az 1 olmalıdır")
 	}
 
 	cfg := configData{
