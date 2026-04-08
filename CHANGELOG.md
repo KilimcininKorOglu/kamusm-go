@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1] - 2026-04-08
+
+### Changed
+- Improve README with badges, parameter tables, and error examples
+
+### Fixed
+- Reject PBKDF2 iteration count below 1 to prevent zero key stretching
+
 ## [1.1.0] - 2026-04-07
 
 ### Changed
