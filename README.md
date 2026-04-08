@@ -1,5 +1,8 @@
 # kamusm-go
 
+[![CI](https://github.com/KilimcininKorOglu/kamusm-go/actions/workflows/ci.yml/badge.svg)](https://github.com/KilimcininKorOglu/kamusm-go/actions/workflows/ci.yml)
+![Go Version](https://img.shields.io/github/go-mod/go-version/KilimcininKorOglu/kamusm-go)
+
 Kamu SM zaman damgası sunucuları ile iletişim kuran komut satırı aracı. TÜBİTAK BİLGEM tarafından işletilen [Kamu SM](https://kamusm.bilgem.tubitak.gov.tr/) altyapısı üzerinden RFC 3161 uyumlu zaman damgası almak, bakiye sorgulamak, kimlik doğrulama başlığı üretmek ve zaman damgası doğrulamak için kullanılır.
 
 Go standart kütüphanesi üzerine inşa edilmiştir. Harici bağımlılıklar: `golang.org/x/crypto` (PBKDF2) ve `go.mozilla.org/pkcs7` (doğrulama).
@@ -68,7 +71,7 @@ kamusm-go gonder --ozet-hex HEX [--hash sha256]
 kamusm-go gonder --sunucu URL --musteri-no ID --parola PAROLA --dosya DOSYA
 ```
 
-`--dosya` verildiğinde çıktı girdi dosyasının yanına `{ad}_zd.der` olarak yazılır. `--ozet-hex` verildiğinde çalışma dizinine `zd_{timestamp}.der` olarak yazılır.
+`--dosya` verildiğinde çıktı girdi dosyasının yanına `{ad}_zd.der` olarak yazılır. `--ozet-hex` verildiğinde çalışma dizinine `zd_{unix_epoch}.der` olarak yazılır (örn. `zd_1712400000.der`).
 
 `--dogrula` aktifse kaydedilen dosya otomatik olarak KamuSM kök sertifikalarıyla doğrulanır.
 
@@ -114,6 +117,9 @@ kamusm-go kimlik --musteri-no ID --parola PAROLA --ozet-hex HEX
 
 # Zaman damgasından (bakiye sorgusu formatında)
 kamusm-go kimlik --musteri-no ID --parola PAROLA --zaman 1712400000000
+
+# Özel iterasyon sayısıyla
+kamusm-go kimlik --musteri-no ID --parola PAROLA --ozet-hex HEX --iterasyon 200
 ```
 
 ### ayar-kaydet
@@ -198,24 +204,26 @@ Tüm komutlarda ortak (config'den de okunabilir):
 
 `gonder` ve `bakiye` komutlarında ek:
 
-| Parametre  | Zorunlu | Açıklama           |
+| Parametre  | Zorunlu | Açıklama            |
 |------------|---------|---------------------|
 | `--sunucu` | Evet*   | Sunucu adresi (URL) |
 
 `gonder` komutuna özel:
 
-| Parametre    | Açıklama                                  |
-|--------------|-------------------------------------------|
-| `--dosya`    | Damgalanacak dosya yolu                   |
-| `--ozet-hex` | Önceden hesaplanmış özet (hex)            |
-| `--hash`     | `sha1` veya `sha256` (varsayılan: sha256) |
-| `--dogrula`  | Kaydedilen dosyayı otomatik doğrula       |
+| Parametre    | Zorunlu | Açıklama                                  |
+|--------------|---------|-------------------------------------------|
+| `--dosya`    | Evet*   | Damgalanacak dosya yolu                   |
+| `--ozet-hex` | Evet*   | Önceden hesaplanmış özet (hex)            |
+| `--hash`     | Hayır   | `sha1` veya `sha256` (varsayılan: sha256) |
+| `--dogrula`  | Hayır   | Kaydedilen dosyayı otomatik doğrula       |
+
+*`--dosya` veya `--ozet-hex` parametrelerinden biri sağlanmalıdır.
 
 `dogrula` komutuna özel:
 
-| Parametre | Zorunlu | Açıklama                   |
-|-----------|---------|----------------------------|
-| `--dosya` | Evet    | Doğrulanacak .der dosyası  |
+| Parametre | Zorunlu | Açıklama                  |
+|-----------|---------|---------------------------|
+| `--dosya` | Evet    | Doğrulanacak .der dosyası |
 
 ## Yapılandırma Dosyası
 
@@ -250,11 +258,12 @@ Sunucu hata durumlarında bile HTTP 200 döner. İstemci yanıt gövdesinde PKCS
 
 ## Sık Karşılaşılan Hatalar
 
-| Mesaj                                    | Sebep                                  |
-|------------------------------------------|----------------------------------------|
-| `Account X could not be authenticated`   | Hatalı parola veya süresi dolmuş hesap |
-| `User X is not known`                    | Geçersiz müşteri numarası              |
-| Bağlantı hatası                          | Ağ erişimi veya güvenlik duvarı sorunu |
+| Mesaj                                  | Sebep                                                                   |
+|----------------------------------------|-------------------------------------------------------------------------|
+| `Account X could not be authenticated` | Hatalı parola veya süresi dolmuş hesap                                  |
+| `User X is not known`                  | Geçersiz müşteri numarası                                               |
+| Bağlantı hatası / timeout              | Ağ erişimi, güvenlik duvarı veya sunucu yanıt vermedi (30s zaman aşımı) |
+| `Not enough credit`                    | Hesapta yeterli zaman damgası bakiyesi yok                              |
 
 ## Güvenlik Notları
 
