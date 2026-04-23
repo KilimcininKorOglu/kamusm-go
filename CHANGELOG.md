@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.0] - 2026-04-23
+
+### Added
+- Importable `kamusm-zd` library package for use in other Go projects
+- Library API documentation and usage examples in README
+- Single version source in `kamusm-zd/version.go` shared by CLI and library
+
+### Changed
+- Extract core logic from flat `package main` into `kamusm-zd/` package with exported API
+- Update README for both end-user and developer audiences
+
 ## [1.1.1] - 2026-04-08
 
 ### Changed
