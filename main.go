@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-)
 
-const version = "1.1.1"
+	kamusmzd "github.com/KilimcininKorOglu/kamusm-go/kamusm-zd"
+)
 
 func main() {
 	if len(os.Args) < 2 {
@@ -34,7 +34,7 @@ func main() {
 	case "ayar-goster":
 		runShowConfig()
 	case "versiyon", "--version", "-v":
-		fmt.Printf("kamusm-go %s\n", version)
+		fmt.Printf("kamusm-go %s\n", kamusmzd.Version)
 	case "help", "--help", "-h":
 		printUsage()
 	default:
@@ -97,7 +97,7 @@ func runIdentity(args []string) {
 		fatal("--ozet-hex veya --zaman parametrelerinden biri sağlanmalıdır")
 	}
 
-	identity, err := buildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon)
+	identity, err := kamusmzd.BuildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon)
 	if err != nil {
 		fatal("Identity oluşturulamadı: %v", err)
 	}
@@ -142,7 +142,7 @@ func runSend(args []string) {
 
 	if *dosya != "" {
 		var err error
-		digest, err = computeFileDigest(*dosya, *hashAlg)
+		digest, err = kamusmzd.ComputeFileDigest(*dosya, *hashAlg)
 		if err != nil {
 			fatal("Dosya hash'i hesaplanamadı: %v", err)
 		}
@@ -161,25 +161,25 @@ func runSend(args []string) {
 		fatal("--dosya veya --ozet-hex parametrelerinden biri sağlanmalıdır")
 	}
 
-	der, err := buildTsaRequest(digest, *hashAlg)
+	der, err := kamusmzd.BuildTsaRequest(digest, *hashAlg)
 	if err != nil {
 		fatal("TSA isteği oluşturulamadı: %v", err)
 	}
 
-	identity, err := buildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon)
+	identity, err := kamusmzd.BuildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon)
 	if err != nil {
 		fatal("Identity oluşturulamadı: %v", err)
 	}
 
-	status, body, err := sendTimestampRequest(*sunucu, identity, der)
+	status, body, err := kamusmzd.SendTimestampRequest(*sunucu, identity, der)
 	if err != nil {
 		fatal("İstek gönderilemedi: %v", err)
 	}
 
-	if isValidTimestampResponse(body) {
+	if kamusmzd.IsValidTimestampResponse(body) {
 		var saved bool
-		if pkcs7 := extractPkcs7(body); pkcs7 != nil {
-			if err := os.WriteFile(outputFilename, pkcs7, 0644); err != nil {
+		if pkcs7Data := kamusmzd.ExtractPkcs7(body); pkcs7Data != nil {
+			if err := os.WriteFile(outputFilename, pkcs7Data, 0644); err != nil {
 				fatal("Yanıt yazılamadı: %v", err)
 			}
 			saved = true
@@ -194,7 +194,7 @@ func runSend(args []string) {
 			result := map[string]any{"durum": status, "basarili": true, "dosya": outputFilename}
 			if *dogrula {
 				savedData, _ := os.ReadFile(outputFilename)
-				vr, err := verifyTimestamp(savedData)
+				vr, err := kamusmzd.VerifyTimestamp(savedData)
 				if err != nil {
 					result["dogrulama"] = map[string]any{"gecerli": false, "hata": err.Error()}
 				} else {
@@ -209,7 +209,7 @@ func runSend(args []string) {
 			}
 			if *dogrula {
 				savedData, _ := os.ReadFile(outputFilename)
-				vr, err := verifyTimestamp(savedData)
+				vr, err := kamusmzd.VerifyTimestamp(savedData)
 				if err != nil {
 					fmt.Printf("Doğrulama hatası: %v\n", err)
 				} else if vr.Valid {
@@ -223,7 +223,7 @@ func runSend(args []string) {
 			}
 		}
 	} else {
-		texts := extractTextFromAsn1(body)
+		texts := kamusmzd.ExtractTextFromAsn1(body)
 
 		if *jsonOut {
 			result := map[string]any{"durum": status, "basarili": false}
@@ -298,12 +298,12 @@ func runCredits(args []string) {
 	h := sha1.Sum([]byte(s))
 	digest := h[:]
 
-	identity, err := buildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon)
+	identity, err := kamusmzd.BuildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon)
 	if err != nil {
 		fatal("Identity oluşturulamadı: %v", err)
 	}
 
-	status, contentType, body, err := sendCreditRequest(*sunucu, identity, uint32(*musteriNo), ts)
+	status, contentType, body, err := kamusmzd.SendCreditRequest(*sunucu, identity, uint32(*musteriNo), ts)
 	if err != nil {
 		fatal("Bakiye kontrolü isteği gönderilemedi: %v", err)
 	}
@@ -311,7 +311,7 @@ func runCredits(args []string) {
 	if *jsonOut {
 		result := map[string]any{"durum": status}
 		if strings.HasPrefix(contentType, "application/timestamp-reply") {
-			if credits, ok := parseCreditsFromBody(body); ok {
+			if credits, ok := kamusmzd.ParseCreditsFromBody(body); ok {
 				result["bakiye"] = credits
 			} else {
 				result["hata"] = strings.TrimSpace(string(body))
@@ -324,7 +324,7 @@ func runCredits(args []string) {
 		fmt.Printf("Yanıt durumu: %d\n", status)
 
 		if strings.HasPrefix(contentType, "application/timestamp-reply") {
-			if credits, ok := parseCreditsFromBody(body); ok {
+			if credits, ok := kamusmzd.ParseCreditsFromBody(body); ok {
 				fmt.Printf("Kalan zaman damgası bakiyesi: %d\n", credits)
 			} else {
 				text := string(body)
@@ -367,7 +367,7 @@ func runVerify(args []string) {
 		fatal("Dosya okunamadı: %v", err)
 	}
 
-	result, err := verifyTimestamp(data)
+	result, err := kamusmzd.VerifyTimestamp(data)
 	if err != nil {
 		if *jsonOut {
 			printJSON(map[string]any{"gecerli": false, "hata": err.Error()})
@@ -413,7 +413,7 @@ func runSaveConfig(args []string) {
 		fatal("--iterasyon değeri en az 1 olmalıdır")
 	}
 
-	cfg := configData{
+	cfg := kamusmzd.ConfigData{
 		Sunucu:    *sunucu,
 		MusteriNo: uint32(*musteriNo),
 		Parola:    *parola,
@@ -421,16 +421,16 @@ func runSaveConfig(args []string) {
 		Iterasyon: *iterasyon,
 	}
 
-	if err := saveConfig(cfg); err != nil {
+	if err := kamusmzd.SaveConfig(cfg); err != nil {
 		fatal("Ayarlar kaydedilemedi: %v", err)
 	}
 
-	path, _ := configPath()
+	path, _ := kamusmzd.ConfigPath()
 	fmt.Printf("Ayarlar şifreli olarak kaydedildi: %s\n", path)
 }
 
 func runShowConfig() {
-	cfg, err := loadConfig()
+	cfg, err := kamusmzd.LoadConfig()
 	if err != nil {
 		fatal("Ayarlar okunamadı: %v", err)
 	}
@@ -438,14 +438,13 @@ func runShowConfig() {
 	fmt.Println("Kayıtlı ayarlar:")
 	fmt.Printf("  Sunucu:     %s\n", cfg.Sunucu)
 	fmt.Printf("  Müşteri No: %d\n", cfg.MusteriNo)
-	fmt.Printf("  Parola:     %s\n", maskPassword(cfg.Parola))
+	fmt.Printf("  Parola:     %s\n", kamusmzd.MaskPassword(cfg.Parola))
 	fmt.Printf("  Hash:       %s\n", cfg.Hash)
 	fmt.Printf("  İterasyon:  %d\n", cfg.Iterasyon)
 }
 
-// applyConfigDefaults loads config and fills in missing values.
 func applyConfigDefaults(sunucu *string, musteriNo *uint, parola *string, hashAlg *string, iterasyon *int) {
-	cfg, err := loadConfig()
+	cfg, err := kamusmzd.LoadConfig()
 	if err != nil {
 		return
 	}
@@ -466,21 +465,18 @@ func applyConfigDefaults(sunucu *string, musteriNo *uint, parola *string, hashAl
 	}
 }
 
-// printJSON encodes the value as JSON and writes to stdout.
 func printJSON(v any) {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	enc.Encode(v)
 }
 
-// fileNameWithoutExt returns the file name without its extension.
 func fileNameWithoutExt(path string) string {
 	base := filepath.Base(path)
 	ext := filepath.Ext(base)
 	return strings.TrimSuffix(base, ext)
 }
 
-// isPrintableString checks if a string contains only printable characters.
 func isPrintableString(s string) bool {
 	for _, b := range []byte(s) {
 		if b < 0x20 || b > 0x7E {

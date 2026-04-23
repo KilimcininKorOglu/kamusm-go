@@ -1,4 +1,4 @@
-package main
+package kamusmzd
 
 import (
 	"crypto/x509"
@@ -8,32 +8,30 @@ import (
 	"go.mozilla.org/pkcs7"
 )
 
-// verifyResult holds the result of a timestamp verification.
-type verifyResult struct {
-	Valid   bool      `json:"gecerli"`
-	Signer  string    `json:"imzalayan,omitempty"`
-	Date    time.Time `json:"tarih,omitempty"`
-	Error   string    `json:"hata,omitempty"`
+// VerifyResult holds the result of a timestamp verification.
+type VerifyResult struct {
+	Valid  bool      `json:"gecerli"`
+	Signer string   `json:"imzalayan,omitempty"`
+	Date   time.Time `json:"tarih,omitempty"`
+	Error  string   `json:"hata,omitempty"`
 }
 
-// verifyTimestamp verifies the PKCS#7 SignedData in the given DER data
+// VerifyTimestamp verifies the PKCS#7 SignedData in the given DER data
 // against KamuSM root CA certificates.
-func verifyTimestamp(derData []byte) (*verifyResult, error) {
+func VerifyTimestamp(derData []byte) (*VerifyResult, error) {
 	p7, err := pkcs7.Parse(derData)
 	if err != nil {
 		return nil, fmt.Errorf("PKCS#7 ayrıştırma hatası: %w", err)
 	}
 
-	// Verify the signature
 	if err := p7.Verify(); err != nil {
-		return &verifyResult{
+		return &VerifyResult{
 			Valid: false,
 			Error: fmt.Sprintf("imza doğrulama başarısız: %v", err),
 		}, nil
 	}
 
-	// Verify the certificate chain against KamuSM root CAs
-	roots := kamusmRootCAs()
+	roots := KamusmRootCAs()
 	var signer *x509.Certificate
 
 	for _, cert := range p7.Certificates {
@@ -47,17 +45,15 @@ func verifyTimestamp(derData []byte) (*verifyResult, error) {
 		signer = p7.Certificates[0]
 	}
 
-	result := &verifyResult{Valid: true}
+	result := &VerifyResult{Valid: true}
 
 	if signer != nil {
 		result.Signer = signer.Subject.CommonName
 
-		// Try to extract signing time from signer info
 		if !signer.NotBefore.IsZero() {
 			result.Date = time.Now()
 		}
 
-		// Verify certificate chain
 		intermediates := x509.NewCertPool()
 		for _, cert := range p7.Certificates {
 			if cert != signer {

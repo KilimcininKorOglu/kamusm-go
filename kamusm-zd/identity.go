@@ -1,4 +1,4 @@
-package main
+package kamusmzd
 
 import (
 	"crypto/rand"
@@ -7,8 +7,8 @@ import (
 	"math/big"
 )
 
-// esyaReqEx represents the ASN.1 structure for the identity header.
-type esyaReqEx struct {
+// EsyaReqEx represents the ASN.1 structure for the identity header.
+type EsyaReqEx struct {
 	UserID                  int
 	Salt                    []byte
 	IterationCount          int
@@ -16,9 +16,9 @@ type esyaReqEx struct {
 	EncryptedMessageImprint []byte
 }
 
-// buildIdentity creates the identity header for KamuSM authentication.
+// BuildIdentity creates the identity header for KamuSM authentication.
 // Returns a hex string of the DER-encoded ASN.1 structure interpreted as a big integer.
-func buildIdentity(customerID uint32, password string, messageImprint []byte, iterations int) (string, error) {
+func BuildIdentity(customerID uint32, password string, messageImprint []byte, iterations int) (string, error) {
 	iv := make([]byte, 16)
 	if _, err := rand.Read(iv); err != nil {
 		return "", fmt.Errorf("rastgele IV üretilemedi: %w", err)
@@ -33,7 +33,7 @@ func buildIdentity(customerID uint32, password string, messageImprint []byte, it
 		return "", fmt.Errorf("şifreleme hatası: %w", err)
 	}
 
-	token := esyaReqEx{
+	token := EsyaReqEx{
 		UserID:                  int(customerID),
 		Salt:                    salt,
 		IterationCount:          iterations,
@@ -46,7 +46,6 @@ func buildIdentity(customerID uint32, password string, messageImprint []byte, it
 		return "", fmt.Errorf("ASN.1 DER kodlama hatası: %w", err)
 	}
 
-	// Rust uyumluluğu: DER bytes → BigUint → hex string
 	n := new(big.Int).SetBytes(der)
 	return fmt.Sprintf("%x", n), nil
 }

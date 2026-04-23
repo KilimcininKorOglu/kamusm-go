@@ -1,4 +1,4 @@
-package main
+package kamusmzd
 
 import (
 	"crypto/sha1"
@@ -17,27 +17,24 @@ var (
 	oidSHA256 = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 2, 1}
 )
 
-// algorithmIdentifier represents the AlgorithmIdentifier ASN.1 structure.
 type algorithmIdentifier struct {
 	Algorithm  asn1.ObjectIdentifier
 	Parameters asn1.RawValue `asn1:"optional"`
 }
 
-// messageImprint represents the MessageImprint ASN.1 structure.
 type messageImprint struct {
 	HashAlgorithm algorithmIdentifier
 	HashedMessage []byte
 }
 
-// timeStampReq represents the RFC 3161 TimeStampReq ASN.1 structure.
 type timeStampReq struct {
 	Version        int
 	MessageImprint messageImprint
 	Nonce          int64
 }
 
-// computeFileDigest computes the hash of a file using the specified algorithm.
-func computeFileDigest(path, alg string) ([]byte, error) {
+// ComputeFileDigest computes the hash of a file using the specified algorithm.
+func ComputeFileDigest(path, alg string) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("dosya okunamadı: %w", err)
@@ -61,8 +58,8 @@ func computeFileDigest(path, alg string) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-// buildTsaRequest creates an RFC 3161 TimeStampReq DER-encoded structure.
-func buildTsaRequest(digest []byte, hashAlg string) ([]byte, error) {
+// BuildTsaRequest creates an RFC 3161 TimeStampReq DER-encoded structure.
+func BuildTsaRequest(digest []byte, hashAlg string) ([]byte, error) {
 	var oid asn1.ObjectIdentifier
 	switch strings.ToLower(hashAlg) {
 	case "sha1":

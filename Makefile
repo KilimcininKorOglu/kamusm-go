@@ -1,6 +1,6 @@
 BINARY    := kamusm-go
 BUILD_DIR := bin
-VERSION   := $(shell grep 'const version' main.go | cut -d'"' -f2)
+VERSION   := $(shell grep 'const Version' kamusm-zd/version.go | cut -d'"' -f2)
 LDFLAGS   := -s -w
 
 .PHONY: build vet clean install run test help

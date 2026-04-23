@@ -1,4 +1,4 @@
-package main
+package kamusmzd
 
 import (
 	"crypto/rand"
@@ -15,8 +15,8 @@ const (
 	configKDIter     = 100000
 )
 
-// configData holds the saved configuration.
-type configData struct {
+// ConfigData holds the saved configuration.
+type ConfigData struct {
 	Sunucu    string `json:"sunucu"`
 	MusteriNo uint32 `json:"musteriNo"`
 	Parola    string `json:"parola"`
@@ -24,8 +24,8 @@ type configData struct {
 	Iterasyon int    `json:"iterasyon"`
 }
 
-// configPath returns the path to the configuration file in the user's home directory.
-func configPath() (string, error) {
+// ConfigPath returns the path to the configuration file in the user's home directory.
+func ConfigPath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("kullanıcı dizini bulunamadı: %w", err)
@@ -33,7 +33,6 @@ func configPath() (string, error) {
 	return filepath.Join(home, configFileName), nil
 }
 
-// machineKey derives a 32-byte AES key from hostname + username + per-file random salt.
 func machineKey(salt []byte) ([]byte, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -49,9 +48,8 @@ func machineKey(salt []byte) ([]byte, error) {
 	return deriveKey(source, salt, configKDIter), nil
 }
 
-// saveConfig encrypts and saves the configuration to ~/.kamusm-go.conf.
-// File format: salt(16) + iv(16) + ciphertext
-func saveConfig(cfg configData) error {
+// SaveConfig encrypts and saves the configuration to ~/.kamusm-go.conf.
+func SaveConfig(cfg ConfigData) error {
 	jsonData, err := json.Marshal(cfg)
 	if err != nil {
 		return fmt.Errorf("JSON kodlama hatası: %w", err)
@@ -77,13 +75,12 @@ func saveConfig(cfg configData) error {
 		return fmt.Errorf("şifreleme hatası: %w", err)
 	}
 
-	// salt(16) + iv(16) + ciphertext
 	fileData := make([]byte, 0, 32+len(ciphertext))
 	fileData = append(fileData, salt...)
 	fileData = append(fileData, iv...)
 	fileData = append(fileData, ciphertext...)
 
-	path, err := configPath()
+	path, err := ConfigPath()
 	if err != nil {
 		return err
 	}
@@ -95,9 +92,9 @@ func saveConfig(cfg configData) error {
 	return nil
 }
 
-// loadConfig reads and decrypts the configuration from ~/.kamusm-go.conf.
-func loadConfig() (*configData, error) {
-	path, err := configPath()
+// LoadConfig reads and decrypts the configuration from ~/.kamusm-go.conf.
+func LoadConfig() (*ConfigData, error) {
+	path, err := ConfigPath()
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +104,7 @@ func loadConfig() (*configData, error) {
 		return nil, fmt.Errorf("yapılandırma dosyası okunamadı: %w", err)
 	}
 
-	if len(data) < 33 { // salt(16) + iv(16) + min 1 byte ciphertext
+	if len(data) < 33 {
 		return nil, fmt.Errorf("yapılandırma dosyası bozuk")
 	}
 
@@ -125,7 +122,7 @@ func loadConfig() (*configData, error) {
 		return nil, fmt.Errorf("yapılandırma çözülemedi: %w", err)
 	}
 
-	var cfg configData
+	var cfg ConfigData
 	if err := json.Unmarshal(jsonData, &cfg); err != nil {
 		return nil, fmt.Errorf("yapılandırma ayrıştırılamadı: %w", err)
 	}
@@ -133,8 +130,8 @@ func loadConfig() (*configData, error) {
 	return &cfg, nil
 }
 
-// maskPassword returns a masked version of the password for display.
-func maskPassword(p string) string {
+// MaskPassword returns a masked version of the password for display.
+func MaskPassword(p string) string {
 	if len(p) <= 3 {
 		return "***"
 	}

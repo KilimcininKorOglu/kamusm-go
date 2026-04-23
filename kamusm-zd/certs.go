@@ -1,4 +1,4 @@
-package main
+package kamusmzd
 
 import (
 	"crypto/x509"
@@ -6,7 +6,6 @@ import (
 )
 
 const (
-	// http://depo.kamusm.gov.tr/nes/KOKSHS.V6.crt
 	kamusmRootCAv6 = `-----BEGIN CERTIFICATE-----
 MIIDATCCAoigAwIBAgIHAO0duC4B1jAKBggqhkjOPQQDAzCBxjELMAkGA1UEBhMC
 VFIxGDAWBgNVBAcMD0dlYnplIC0gS29jYWVsaTFHMEUGA1UECgw+VMO8cmtpeWUg
@@ -27,7 +26,6 @@ UPSUAjB7BJ+eeCX9QQXbDMVKr04rcpOo9iNVVLSD2uT2bNEQqJX8b8upRr7+TFmf
 szwiaJk=
 -----END CERTIFICATE-----`
 
-	// http://depo.kamusm.gov.tr/nes/KOKSHS.V5.crt
 	kamusmRootCAv5 = `-----BEGIN CERTIFICATE-----
 MIIEUDCCAzigAwIBAgIGLLmOuQDFMA0GCSqGSIb3DQEBCwUAMIHGMQswCQYDVQQG
 EwJUUjEYMBYGA1UEBwwPR2ViemUgLSBLb2NhZWxpMUcwRQYDVQQKDD5Uw7xya2l5
@@ -55,7 +53,6 @@ vA3pJ+DUIrucTvD417fTVy0NPetxTTQWKmEqcMw4tSRWSe/M7K1Q/8hM+cvANgOc
 8GAhIg==
 -----END CERTIFICATE-----`
 
-	// http://depo.kamusm.gov.tr/nes/KOKSHS.V7.crt
 	kamusmRootCAv7 = `-----BEGIN CERTIFICATE-----
 MIICqjCCAjCgAwIBAgIHAOHOlcAEqjAKBggqhkjOPQQDAzCBmjELMAkGA1UEBhMC
 VFIxEDAOBgNVBAgMB0tvY2FlbGkxNTAzBgNVBAoMLFTDnELEsFRBSyBCxLBMR0VN
@@ -74,7 +71,6 @@ CgBx2in+sgBQrkQCMQCNVlO92uuYxNwhW3ZDNSePr0uJTRV78Du1qRTRjqp6nO/r
 HqhhcClEXcOQxy4P62U=
 -----END CERTIFICATE-----`
 
-	// http://depo.kamusm.gov.tr/nes/kokshs.v4.crt
 	kamusmRootCAv4 = `-----BEGIN CERTIFICATE-----
 MIIESzCCAzOgAwIBAgIBdTANBgkqhkiG9w0BAQUFADCBxjELMAkGA1UEBhMCVFIx
 GDAWBgNVBAcMD0dlYnplIC0gS29jYWVsaTFHMEUGA1UECgw+VMO8cmtpeWUgQmls
@@ -102,8 +98,8 @@ Llu8tEVfOoMGLuJRQF6F5oY28lTqNLhfnytKBikaXgx5apHakqVpL+h+UvqwHnMj
 -----END CERTIFICATE-----`
 )
 
-// kamusmRootCAs returns a CertPool containing KamuSM root CA certificates.
-func kamusmRootCAs() *x509.CertPool {
+// KamusmRootCAs returns a CertPool containing KamuSM root CA certificates.
+func KamusmRootCAs() *x509.CertPool {
 	pool := x509.NewCertPool()
 
 	for _, pemData := range []string{kamusmRootCAv7, kamusmRootCAv6, kamusmRootCAv5, kamusmRootCAv4} {

@@ -1,4 +1,4 @@
-package main
+package kamusmzd
 
 import (
 	"bytes"
@@ -10,17 +10,15 @@ import (
 )
 
 const (
-	userAgent       = "KilimcininKorOglu/kamusm-go/" + version
 	maxResponseSize = 1 << 16 // 64KB
 	httpTimeout     = 30 * time.Second
 )
 
 var httpClient = &http.Client{Timeout: httpTimeout}
 
-// setCommonHeaders sets the common HTTP headers for all KamuSM requests.
 func setCommonHeaders(req *http.Request, identity string) {
 	req.Header.Set("Content-Type", "application/timestamp-query")
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", "KilimcininKorOglu/kamusm-go/"+Version)
 	req.Header.Set("identity", identity)
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Pragma", "no-cache")
@@ -28,8 +26,8 @@ func setCommonHeaders(req *http.Request, identity string) {
 	req.Header.Set("Connection", "keep-alive")
 }
 
-// sendTimestampRequest sends a timestamp request to the KamuSM server.
-func sendTimestampRequest(host, identity string, der []byte) (int, []byte, error) {
+// SendTimestampRequest sends a timestamp request to the KamuSM server.
+func SendTimestampRequest(host, identity string, der []byte) (int, []byte, error) {
 	req, err := http.NewRequest("POST", host, bytes.NewReader(der))
 	if err != nil {
 		return 0, nil, fmt.Errorf("istek oluşturulamadı: %w", err)
@@ -51,8 +49,8 @@ func sendTimestampRequest(host, identity string, der []byte) (int, []byte, error
 	return resp.StatusCode, body, nil
 }
 
-// sendCreditRequest sends a credit balance check request to the KamuSM server.
-func sendCreditRequest(host, identity string, customerID uint32, timestamp uint64) (int, string, []byte, error) {
+// SendCreditRequest sends a credit balance check request to the KamuSM server.
+func SendCreditRequest(host, identity string, customerID uint32, timestamp uint64) (int, string, []byte, error) {
 	req, err := http.NewRequest("POST", host, nil)
 	if err != nil {
 		return 0, "", nil, fmt.Errorf("istek oluşturulamadı: %w", err)

@@ -3,11 +3,13 @@
 [![CI](https://github.com/KilimcininKorOglu/kamusm-go/actions/workflows/ci.yml/badge.svg)](https://github.com/KilimcininKorOglu/kamusm-go/actions/workflows/ci.yml)
 ![Go Version](https://img.shields.io/github/go-mod/go-version/KilimcininKorOglu/kamusm-go)
 
-Kamu SM zaman damgası sunucuları ile iletişim kuran komut satırı aracı. TÜBİTAK BİLGEM tarafından işletilen [Kamu SM](https://kamusm.bilgem.tubitak.gov.tr/) altyapısı üzerinden RFC 3161 uyumlu zaman damgası almak, bakiye sorgulamak, kimlik doğrulama başlığı üretmek ve zaman damgası doğrulamak için kullanılır.
+Kamu SM zaman damgası sunucuları ile iletişim kuran CLI aracı ve Go kütüphanesi. TÜBİTAK BİLGEM tarafından işletilen [Kamu SM](https://kamusm.bilgem.tubitak.gov.tr/) altyapısı üzerinden RFC 3161 uyumlu zaman damgası almak, bakiye sorgulamak, kimlik doğrulama başlığı üretmek ve zaman damgası doğrulamak için kullanılır.
 
 Go standart kütüphanesi üzerine inşa edilmiştir. Harici bağımlılıklar: `golang.org/x/crypto` (PBKDF2) ve `go.mozilla.org/pkcs7` (doğrulama).
 
 ## Kurulum
+
+### CLI
 
 ```bash
 go install github.com/KilimcininKorOglu/kamusm-go@latest
@@ -34,7 +36,19 @@ make version     # Mevcut versiyon
 make help        # Tüm hedefler
 ```
 
+### Kütüphane
+
+```bash
+go get github.com/KilimcininKorOglu/kamusm-go/kamusm-zd
+```
+
+```go
+import kamusmzd "github.com/KilimcininKorOglu/kamusm-go/kamusm-zd"
+```
+
 ## Hızlı Başlangıç
+
+### CLI
 
 İlk kullanımda bağlantı bilgilerini kaydedin:
 
@@ -53,6 +67,36 @@ kamusm-go bakiye
 ```
 
 Başarılı sonuçta `belge_zd.der` dosyası oluşur ve KamuSM kök sertifikalarıyla doğrulanır.
+
+### Kütüphane
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	kamusmzd "github.com/KilimcininKorOglu/kamusm-go/kamusm-zd"
+)
+
+func main() {
+	digest, err := kamusmzd.ComputeFileDigest("belge.pdf", "sha256")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	der, _ := kamusmzd.BuildTsaRequest(digest, "sha256")
+	identity, _ := kamusmzd.BuildIdentity(123456, "sifre", digest, 100)
+
+	status, body, err := kamusmzd.SendTimestampRequest("http://zd.kamusm.gov.tr", identity, der)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Durum: %d, PKCS#7: %v\n", status, kamusmzd.IsValidTimestampResponse(body))
+}
+```
 
 ## Komutlar
 
@@ -135,7 +179,7 @@ kamusm-go ayar-kaydet \
     [--iterasyon 100]
 ```
 
-Şifreleme makineye özeldir (hostname + kullanıcı adı ile türetilen anahtar). Dosya başka bir makinede çözülemez.
+Şifreleme makineye özeldir (hostname + kullanıcı adı + dosyaya özel rastgele salt ile türetilen anahtar). Dosya başka bir makinede çözülemez.
 
 ### ayar-goster
 
@@ -164,7 +208,7 @@ kamusm-go versiyon
 
 ## JSON Çıktı
 
-Tüm komutlar `--json` parametresiyle yapılandırılmış JSON çıktısı verir:
+`kimlik`, `gonder`, `bakiye` ve `dogrula` komutları `--json` parametresiyle yapılandırılmış JSON çıktısı verir:
 
 ```bash
 kamusm-go bakiye --json
@@ -193,12 +237,12 @@ kamusm-go dogrula --dosya belge_zd.der --json
 
 Tüm komutlarda ortak (config'den de okunabilir):
 
-| Parametre      | Zorunlu | Varsayılan | Açıklama                 |
-|----------------|---------|------------|--------------------------|
-| `--musteri-no` | Evet*   | -          | Kamu SM müşteri numarası |
-| `--parola`     | Evet*   | -          | Müşteri parolası         |
-| `--iterasyon`  | Hayır   | 100        | PBKDF2 iterasyon sayısı  |
-| `--json`       | Hayır   | false      | JSON formatında çıktı    |
+| Parametre      | Zorunlu | Varsayılan | Açıklama                          |
+|----------------|---------|------------|-----------------------------------|
+| `--musteri-no` | Evet*   | -          | Kamu SM müşteri numarası          |
+| `--parola`     | Evet*   | -          | Müşteri parolası                  |
+| `--iterasyon`  | Hayır   | 100        | PBKDF2 iterasyon sayısı (en az 1) |
+| `--json`       | Hayır   | false      | JSON formatında çıktı             |
 
 *Config dosyası varsa zorunlu değil.
 
@@ -225,11 +269,43 @@ Tüm komutlarda ortak (config'den de okunabilir):
 |-----------|---------|---------------------------|
 | `--dosya` | Evet    | Doğrulanacak .der dosyası |
 
+`kimlik` ve `bakiye` komutlarına özel:
+
+| Parametre | Zorunlu | Açıklama                                  |
+|-----------|---------|-------------------------------------------|
+| `--zaman` | Hayır   | Unix zaman damgası, milisaniye (override) |
+
+## Kütüphane API
+
+`kamusm-zd` paketi aşağıdaki exported API'yi sunar:
+
+| Fonksiyon                  | Açıklama                                                      |
+|----------------------------|---------------------------------------------------------------|
+| `BuildIdentity`            | KamuSM `identity` HTTP başlığı üretir                         |
+| `BuildTsaRequest`          | RFC 3161 TimeStampReq DER yapısı oluşturur                    |
+| `ComputeFileDigest`        | Dosyanın SHA-1 veya SHA-256 özetini hesaplar                  |
+| `SendTimestampRequest`     | Zaman damgası isteği gönderir                                 |
+| `SendCreditRequest`        | Bakiye sorgusu gönderir                                       |
+| `IsValidTimestampResponse` | Yanıtta PKCS#7 SignedData OID'si olup olmadığını kontrol eder |
+| `ExtractPkcs7`             | Yanıttan PKCS#7 SignedData yapısını çıkarır                   |
+| `ExtractTextFromAsn1`      | ASN.1 yapısından okunabilir metin çıkarır                     |
+| `ParseCreditsFromBody`     | Yanıt gövdesinden bakiye sayısını çıkarır                     |
+| `VerifyTimestamp`          | PKCS#7 imzasını KamuSM kök sertifikalarıyla doğrular          |
+| `KamusmRootCAs`            | KamuSM kök sertifika havuzunu döndürür                        |
+| `SaveConfig`               | Yapılandırmayı şifreli olarak kaydeder                        |
+| `LoadConfig`               | Şifreli yapılandırmayı okur ve çözer                          |
+| `ConfigPath`               | Yapılandırma dosyasının yolunu döndürür                       |
+| `MaskPassword`             | Parolayı maskeli olarak gösterir                              |
+
+Tipler: `ConfigData`, `VerifyResult`, `EsyaReqEx`
+
 ## Yapılandırma Dosyası
 
 `ayar-kaydet` komutuyla kaydedilen bilgiler `~/.kamusm-go.conf` dosyasında şifreli tutulur. Diğer komutlar çalıştırıldığında eksik parametreler bu dosyadan okunur. CLI parametreleri her zaman config değerlerinin üstüne yazar.
 
-Dosya formatı: AES-256-CBC ile şifrelenmiş binary. Anahtar, makine kimliğinden (hostname + kullanıcı adı) PBKDF2 ile türetilir.
+Dosya formatı: `salt(16) + iv(16) + AES-256-CBC(JSON)`. Anahtar, makine kimliğinden (hostname + kullanıcı adı) ve dosyaya özel rastgele salt'tan PBKDF2-SHA256 (100.000 iterasyon) ile türetilir. Dosya 0600 izinleriyle korunur.
+
+**Not:** v1.1.0 ve sonrası salt mekanizmasını değiştirmiştir. Eski sürümlerle oluşturulan config dosyaları çalışmaz; `ayar-kaydet` ile yeniden kaydedin.
 
 ## Nasıl Çalışır
 
@@ -258,18 +334,19 @@ Sunucu hata durumlarında bile HTTP 200 döner. İstemci yanıt gövdesinde PKCS
 
 ## Sık Karşılaşılan Hatalar
 
-| Mesaj                                  | Sebep                                                                   |
-|----------------------------------------|-------------------------------------------------------------------------|
-| `Account X could not be authenticated` | Hatalı parola veya süresi dolmuş hesap                                  |
-| `User X is not known`                  | Geçersiz müşteri numarası                                               |
-| Bağlantı hatası / timeout              | Ağ erişimi, güvenlik duvarı veya sunucu yanıt vermedi (30s zaman aşımı) |
-| `Not enough credit`                    | Hesapta yeterli zaman damgası bakiyesi yok                              |
+| Mesaj                                  | Sebep                                                                        |
+|----------------------------------------|------------------------------------------------------------------------------|
+| `Account X could not be authenticated` | Hatalı parola veya süresi dolmuş hesap                                       |
+| `User X is not known`                  | Geçersiz müşteri numarası                                                    |
+| Bağlantı hatası / timeout              | Ağ erişimi, güvenlik duvarı veya sunucu yanıt vermedi (30s zaman aşımı)      |
+| `Not enough credit`                    | Hesapta yeterli zaman damgası bakiyesi yok                                   |
+| `yapılandırma çözülemedi`              | Config dosyası eski sürümle oluşturulmuş; `ayar-kaydet` ile yeniden kaydedin |
 
 ## Güvenlik Notları
 
 - **Parola koruması**: `--parola` CLI argümanı `ps` çıktısında görünür. Bunu önlemek için `ayar-kaydet` ile bilgileri bir kez kaydedin, sonraki kullanımlarda parametre gerekmez.
-- **Config şifreleme**: `~/.kamusm-go.conf` dosyası AES-256-CBC ile şifrelenir. Anahtar makine kimliğinden (hostname + kullanıcı adı) türetilir. Dosya 0600 izinleriyle korunur ancak makine kimliğini bilen biri dosyayı çözebilir.
-- **Identity protokolü**: `identity` başlığında salt ve IV aynı değerdir. Bu, Kamu SM protokolünün bir parçasıdır ve değiştirilemez. Varsayılan PBKDF2 iterasyon sayısı 100'dür (protokol gereği).
+- **Config şifreleme**: `~/.kamusm-go.conf` dosyası AES-256-CBC ile şifrelenir. Anahtar makine kimliğinden (hostname + kullanıcı adı) ve dosyaya özel rastgele salt'tan türetilir. Dosya 0600 izinleriyle korunur ancak makine kimliğini bilen biri dosyayı çözebilir.
+- **Identity protokolü**: `identity` başlığında salt ve IV aynı değerdir. Bu, Kamu SM protokolünün bir parçasıdır ve değiştirilemez. Varsayılan PBKDF2 iterasyon sayısı 100'dür (protokol gereği). `--iterasyon` en az 1 olmalıdır; 0 veya negatif değerler reddedilir.
 
 ## Gereksinimler
 

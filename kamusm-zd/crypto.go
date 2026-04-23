@@ -1,4 +1,4 @@
-package main
+package kamusmzd
 
 import (
 	"crypto/aes"
@@ -9,7 +9,6 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-// pkcs7Pad applies PKCS#7 padding with 16-byte block size.
 func pkcs7Pad(data []byte) []byte {
 	blockSize := aes.BlockSize
 	padLen := blockSize - (len(data) % blockSize)
@@ -21,12 +20,10 @@ func pkcs7Pad(data []byte) []byte {
 	return padded
 }
 
-// deriveKey derives a 32-byte AES-256 key using PBKDF2-HMAC-SHA256.
 func deriveKey(password string, salt []byte, iterations int) []byte {
 	return pbkdf2.Key([]byte(password), salt, iterations, 32, sha256.New)
 }
 
-// encryptAesCbc encrypts plaintext using AES-256 in CBC mode with PKCS#7 padding.
 func encryptAesCbc(key, iv, plaintext []byte) ([]byte, error) {
 	if len(key) != 32 {
 		return nil, fmt.Errorf("geçersiz anahtar uzunluğu: %d (32 olmalı)", len(key))
@@ -49,7 +46,6 @@ func encryptAesCbc(key, iv, plaintext []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-// pkcs7Unpad removes PKCS#7 padding from the data.
 func pkcs7Unpad(data []byte) ([]byte, error) {
 	if len(data) == 0 {
 		return nil, fmt.Errorf("boş veri")
@@ -66,7 +62,6 @@ func pkcs7Unpad(data []byte) ([]byte, error) {
 	return data[:len(data)-padLen], nil
 }
 
-// decryptAesCbc decrypts ciphertext using AES-256 in CBC mode and removes PKCS#7 padding.
 func decryptAesCbc(key, iv, ciphertext []byte) ([]byte, error) {
 	if len(key) != 32 {
 		return nil, fmt.Errorf("geçersiz anahtar uzunluğu: %d (32 olmalı)", len(key))
