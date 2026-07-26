@@ -22,10 +22,7 @@ func ExtractPkcs7(buf []byte) []byte {
 		return nil
 	}
 
-	startSearch := pos - 16
-	if startSearch < 0 {
-		startSearch = 0
-	}
+	startSearch := max(pos-16, 0)
 
 	for i := pos; i >= startSearch; i-- {
 		if buf[i] != 0x30 {

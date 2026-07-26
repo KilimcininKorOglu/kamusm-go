@@ -99,7 +99,7 @@ func LoadConfig() (*ConfigData, error) {
 		return nil, err
 	}
 
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- fixed config path under the user's home directory
 	if err != nil {
 		return nil, fmt.Errorf("yapılandırma dosyası okunamadı: %w", err)
 	}

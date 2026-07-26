@@ -39,7 +39,7 @@ func SendTimestampRequest(host, identity string, der []byte) (int, []byte, error
 	if err != nil {
 		return 0, nil, fmt.Errorf("istek gönderilemedi: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
@@ -65,7 +65,7 @@ func SendCreditRequest(host, identity string, customerID uint32, timestamp uint6
 	if err != nil {
 		return 0, "", nil, fmt.Errorf("bakiye kontrolü isteği gönderilemedi: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	contentType := resp.Header.Get("Content-Type")
 

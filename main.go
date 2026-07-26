@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" // #nosec G505 -- SHA-1 is mandated by the KamuSM identity/credit protocol, not a security choice
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -67,7 +67,7 @@ func runIdentity(args []string) {
 	zaman := fs.Uint64("zaman", 0, "Unix zaman damgası (milisaniye)")
 	iterasyon := fs.Int("iterasyon", 100, "PBKDF2 iterasyon sayısı")
 	jsonOut := fs.Bool("json", false, "Çıktıyı JSON formatında ver")
-	fs.Parse(args)
+	_ = fs.Parse(args)
 
 	applyConfigDefaults(nil, musteriNo, parola, nil, iterasyon)
 
@@ -91,13 +91,13 @@ func runIdentity(args []string) {
 		}
 	} else if *zaman != 0 {
 		s := fmt.Sprintf("%d%d", *musteriNo, *zaman)
-		h := sha1.Sum([]byte(s))
+		h := sha1.Sum([]byte(s)) // #nosec G401 -- SHA-1 required by KamuSM protocol
 		digest = h[:]
 	} else {
 		fatal("--ozet-hex veya --zaman parametrelerinden biri sağlanmalıdır")
 	}
 
-	identity, err := kamusmzd.BuildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon)
+	identity, err := kamusmzd.BuildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon) // #nosec G115 -- customer number fits uint32 by KamuSM spec
 	if err != nil {
 		fatal("Identity oluşturulamadı: %v", err)
 	}
@@ -120,7 +120,7 @@ func runSend(args []string) {
 	iterasyon := fs.Int("iterasyon", 100, "PBKDF2 iterasyon sayısı")
 	jsonOut := fs.Bool("json", false, "Çıktıyı JSON formatında ver")
 	dogrula := fs.Bool("dogrula", false, "Kaydedilen dosyayı KamuSM sertifikalarıyla doğrula")
-	fs.Parse(args)
+	_ = fs.Parse(args)
 
 	applyConfigDefaults(sunucu, musteriNo, parola, hashAlg, iterasyon)
 
@@ -166,7 +166,7 @@ func runSend(args []string) {
 		fatal("TSA isteği oluşturulamadı: %v", err)
 	}
 
-	identity, err := kamusmzd.BuildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon)
+	identity, err := kamusmzd.BuildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon) // #nosec G115 -- customer number fits uint32 by KamuSM spec
 	if err != nil {
 		fatal("Identity oluşturulamadı: %v", err)
 	}
@@ -179,12 +179,12 @@ func runSend(args []string) {
 	if kamusmzd.IsValidTimestampResponse(body) {
 		var saved bool
 		if pkcs7Data := kamusmzd.ExtractPkcs7(body); pkcs7Data != nil {
-			if err := os.WriteFile(outputFilename, pkcs7Data, 0644); err != nil {
+			if err := os.WriteFile(outputFilename, pkcs7Data, 0644); err != nil { // #nosec G306 -- timestamp token is public, 0644 is intended
 				fatal("Yanıt yazılamadı: %v", err)
 			}
 			saved = true
 		} else {
-			if err := os.WriteFile(outputFilename, body, 0644); err != nil {
+			if err := os.WriteFile(outputFilename, body, 0644); err != nil { // #nosec G306 -- timestamp token is public, 0644 is intended
 				fatal("Yanıt yazılamadı: %v", err)
 			}
 			saved = true
@@ -193,7 +193,7 @@ func runSend(args []string) {
 		if *jsonOut {
 			result := map[string]any{"durum": status, "basarili": true, "dosya": outputFilename}
 			if *dogrula {
-				savedData, _ := os.ReadFile(outputFilename)
+				savedData, _ := os.ReadFile(outputFilename) // #nosec G304 -- path is the tool's own just-written output file
 				vr, err := kamusmzd.VerifyTimestamp(savedData)
 				if err != nil {
 					result["dogrulama"] = map[string]any{"gecerli": false, "hata": err.Error()}
@@ -208,7 +208,7 @@ func runSend(args []string) {
 				fmt.Printf("Çıkarılan PKCS#7 SignedData %s dosyasına kaydedildi\n", outputFilename)
 			}
 			if *dogrula {
-				savedData, _ := os.ReadFile(outputFilename)
+				savedData, _ := os.ReadFile(outputFilename) // #nosec G304 -- path is the tool's own just-written output file
 				vr, err := kamusmzd.VerifyTimestamp(savedData)
 				if err != nil {
 					fmt.Printf("Doğrulama hatası: %v\n", err)
@@ -234,7 +234,7 @@ func runSend(args []string) {
 				if isPrintableString(text) {
 					result["hatalar"] = []string{strings.TrimSpace(text)}
 				} else {
-					if err := os.WriteFile(outputFilename, body, 0644); err != nil {
+					if err := os.WriteFile(outputFilename, body, 0644); err != nil { // #nosec G306 -- timestamp token is public, 0644 is intended
 						fatal("Yanıt yazılamadı: %v", err)
 					}
 					result["dosya"] = outputFilename
@@ -254,7 +254,7 @@ func runSend(args []string) {
 				if isPrintableString(text) {
 					fmt.Printf("Yanıt gövdesi (metin):\n%s\n", text)
 				} else {
-					if err := os.WriteFile(outputFilename, body, 0644); err != nil {
+					if err := os.WriteFile(outputFilename, body, 0644); err != nil { // #nosec G306 -- timestamp token is public, 0644 is intended
 						fatal("Yanıt yazılamadı: %v", err)
 					}
 					fmt.Printf("Binary hata yanıtı %s dosyasına kaydedildi\n", outputFilename)
@@ -272,7 +272,7 @@ func runCredits(args []string) {
 	iterasyon := fs.Int("iterasyon", 100, "PBKDF2 iterasyon sayısı")
 	zaman := fs.Uint64("zaman", 0, "Override zaman damgası (milisaniye)")
 	jsonOut := fs.Bool("json", false, "Çıktıyı JSON formatında ver")
-	fs.Parse(args)
+	_ = fs.Parse(args)
 
 	applyConfigDefaults(sunucu, musteriNo, parola, nil, iterasyon)
 
@@ -295,15 +295,15 @@ func runCredits(args []string) {
 	}
 
 	s := fmt.Sprintf("%d%d", *musteriNo, ts)
-	h := sha1.Sum([]byte(s))
+	h := sha1.Sum([]byte(s)) // #nosec G401 -- SHA-1 required by KamuSM protocol
 	digest := h[:]
 
-	identity, err := kamusmzd.BuildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon)
+	identity, err := kamusmzd.BuildIdentity(uint32(*musteriNo), *parola, digest, *iterasyon) // #nosec G115 -- customer number fits uint32 by KamuSM spec
 	if err != nil {
 		fatal("Identity oluşturulamadı: %v", err)
 	}
 
-	status, contentType, body, err := kamusmzd.SendCreditRequest(*sunucu, identity, uint32(*musteriNo), ts)
+	status, contentType, body, err := kamusmzd.SendCreditRequest(*sunucu, identity, uint32(*musteriNo), ts) // #nosec G115 -- customer number fits uint32 by KamuSM spec
 	if err != nil {
 		fatal("Bakiye kontrolü isteği gönderilemedi: %v", err)
 	}
@@ -331,7 +331,7 @@ func runCredits(args []string) {
 				if isPrintableString(text) {
 					fmt.Printf("Yanıt gövdesi (metin):\n%s\n", text)
 				} else {
-					if err := os.WriteFile("timestamp_resp.der", body, 0644); err != nil {
+					if err := os.WriteFile("timestamp_resp.der", body, 0644); err != nil { // #nosec G306 -- timestamp token is public, 0644 is intended
 						fatal("Yanıt yazılamadı: %v", err)
 					}
 					fmt.Println("Binary yanıt; timestamp_resp.der dosyasına kaydedildi")
@@ -343,7 +343,7 @@ func runCredits(args []string) {
 			if isPrintableString(text) {
 				fmt.Printf("Yanıt gövdesi (metin):\n%s\n", text)
 			} else {
-				if err := os.WriteFile("timestamp_resp.der", body, 0644); err != nil {
+				if err := os.WriteFile("timestamp_resp.der", body, 0644); err != nil { // #nosec G306 -- timestamp token is public, 0644 is intended
 					fatal("Yanıt yazılamadı: %v", err)
 				}
 				fmt.Println("Binary yanıt; timestamp_resp.der dosyasına kaydedildi")
@@ -356,13 +356,13 @@ func runVerify(args []string) {
 	fs := flag.NewFlagSet("verify", flag.ExitOnError)
 	dosya := fs.String("dosya", "", "Doğrulanacak .der dosyası")
 	jsonOut := fs.Bool("json", false, "Çıktıyı JSON formatında ver")
-	fs.Parse(args)
+	_ = fs.Parse(args)
 
 	if *dosya == "" {
 		fatal("--dosya parametresi gereklidir")
 	}
 
-	data, err := os.ReadFile(*dosya)
+	data, err := os.ReadFile(*dosya) // #nosec G304 -- user-supplied path is the CLI's intended input
 	if err != nil {
 		fatal("Dosya okunamadı: %v", err)
 	}
@@ -398,7 +398,7 @@ func runSaveConfig(args []string) {
 	parola := fs.String("parola", "", "Müşteri şifresi")
 	hashAlg := fs.String("hash", "sha256", "Hash algoritması")
 	iterasyon := fs.Int("iterasyon", 100, "PBKDF2 iterasyon sayısı")
-	fs.Parse(args)
+	_ = fs.Parse(args)
 
 	if *sunucu == "" {
 		fatal("--sunucu parametresi gereklidir")
@@ -415,7 +415,7 @@ func runSaveConfig(args []string) {
 
 	cfg := kamusmzd.ConfigData{
 		Sunucu:    *sunucu,
-		MusteriNo: uint32(*musteriNo),
+		MusteriNo: uint32(*musteriNo), // #nosec G115 -- customer number fits uint32 by KamuSM spec
 		Parola:    *parola,
 		Hash:      *hashAlg,
 		Iterasyon: *iterasyon,
@@ -468,7 +468,7 @@ func applyConfigDefaults(sunucu *string, musteriNo *uint, parola *string, hashAl
 func printJSON(v any) {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
-	enc.Encode(v)
+	_ = enc.Encode(v)
 }
 
 func fileNameWithoutExt(path string) string {

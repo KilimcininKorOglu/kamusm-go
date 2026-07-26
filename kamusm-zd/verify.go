@@ -12,7 +12,7 @@ import (
 type VerifyResult struct {
 	Valid  bool      `json:"gecerli"`
 	Signer string   `json:"imzalayan,omitempty"`
-	Date   time.Time `json:"tarih,omitempty"`
+	Date   time.Time `json:"tarih"`
 	Error  string   `json:"hata,omitempty"`
 }
 

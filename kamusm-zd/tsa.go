@@ -1,7 +1,7 @@
 package kamusmzd
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" // #nosec G505 -- SHA-1 is a KamuSM/RFC 3161 protocol option, not a security choice
 	"crypto/sha256"
 	"encoding/asn1"
 	"fmt"
@@ -35,16 +35,16 @@ type timeStampReq struct {
 
 // ComputeFileDigest computes the hash of a file using the specified algorithm.
 func ComputeFileDigest(path, alg string) ([]byte, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(path) // #nosec G304 -- caller-supplied path is the intended file to digest
 	if err != nil {
 		return nil, fmt.Errorf("dosya okunamadı: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var h hash.Hash
 	switch strings.ToLower(alg) {
 	case "sha1":
-		h = sha1.New()
+		h = sha1.New() // #nosec G401 -- SHA-1 offered as a protocol-selectable digest, caller opts in via --hash sha1
 	case "sha256":
 		h = sha256.New()
 	default:
