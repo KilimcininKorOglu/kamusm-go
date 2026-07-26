@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1] - 2026-07-27
+
+### Changed
+- Handle unchecked return values and apply modern Go idioms flagged by linters
+- Annotate protocol-mandated static-analysis findings with justified nosec directives
+- Derive the CI Go version from `go.mod` instead of a pinned literal
+- Update README parameter reference and Go version requirement
+
 ## [1.2.0] - 2026-04-23
 
 ### Added
