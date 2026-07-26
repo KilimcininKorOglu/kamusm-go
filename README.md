@@ -235,16 +235,17 @@ kamusm-go dogrula --dosya belge_zd.der --json
 
 ## Parametre Referansı
 
-Tüm komutlarda ortak (config'den de okunabilir):
+`kimlik`, `gonder` ve `bakiye` komutlarında ortak (config'den de okunabilir):
 
 | Parametre      | Zorunlu | Varsayılan | Açıklama                          |
 |----------------|---------|------------|-----------------------------------|
 | `--musteri-no` | Evet*   | -          | Kamu SM müşteri numarası          |
 | `--parola`     | Evet*   | -          | Müşteri parolası                  |
 | `--iterasyon`  | Hayır   | 100        | PBKDF2 iterasyon sayısı (en az 1) |
-| `--json`       | Hayır   | false      | JSON formatında çıktı             |
 
 *Config dosyası varsa zorunlu değil.
+
+`--json` parametresi `kimlik`, `gonder`, `bakiye` ve `dogrula` komutlarında yapılandırılmış çıktı verir (varsayılan: `false`).
 
 `gonder` ve `bakiye` komutlarında ek:
 
@@ -350,7 +351,7 @@ Sunucu hata durumlarında bile HTTP 200 döner. İstemci yanıt gövdesinde PKCS
 
 ## Gereksinimler
 
-- Go 1.22 veya üzeri
+- Go 1.26 veya üzeri (`go.mod`: `go 1.26.1`)
 - Make
 - Geçerli Kamu SM hesabı
 - Sunucuya ağ erişimi (varsayılan port 80)
