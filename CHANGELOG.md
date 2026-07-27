@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.2] - 2026-07-27
+
+### Changed
+- Derive the release workflow Go version from `go.mod` instead of a pinned literal
+
+### Fixed
+- Raise the Go floor to 1.26.5 to close 9 reachable standard-library CVEs in release builds
+
 ## [1.2.1] - 2026-07-27
 
 ### Changed
